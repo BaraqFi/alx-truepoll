@@ -1,4 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TruePoll - Next.js Polling Application
+
+TruePoll is a modern web application built with Next.js that allows users to create, share, and vote on polls. This project uses the App Router, TypeScript, Tailwind CSS, and Shadcn UI components.
+
+## Features
+
+- **User Authentication**: Register, login, and manage user accounts
+- **Poll Creation**: Create custom polls with multiple options
+- **Poll Voting**: Vote on polls and see real-time results
+- **Poll Browsing**: Browse and search through available polls
+
+## Project Structure
+
+```
+├── app/                      # Next.js App Router
+│   ├── auth/                 # Authentication pages
+│   │   ├── login/            # Login page
+│   │   └── register/         # Registration page
+│   ├── polls/                # Poll-related pages
+│   │   ├── [id]/             # Individual poll view
+│   │   └── create/           # Poll creation page
+│   ├── globals.css           # Global styles
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Home page
+├── components/               # React components
+│   ├── layout/               # Layout components
+│   │   ├── MainLayout.tsx    # Main layout wrapper
+│   │   └── Navigation.tsx    # Navigation bar
+│   ├── polls/                # Poll-related components
+│   │   └── PollCard.tsx      # Poll card component
+│   ├── shared/               # Shared components
+│   │   └── EmptyState.tsx    # Empty state component
+│   └── ui/                   # Shadcn UI components
+├── contexts/                 # React contexts
+│   └── AuthContext.tsx       # Authentication context
+├── lib/                      # Utility functions
+│   └── utils.ts              # Helper utilities
+└── public/                   # Static assets
+```
 
 ## Getting Started
 
@@ -16,21 +54,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technologies Used
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js**: React framework for server-side rendering and static site generation
+- **TypeScript**: Typed JavaScript for better developer experience
+- **Tailwind CSS**: Utility-first CSS framework
+- **Shadcn UI**: Reusable UI components built with Radix UI and Tailwind CSS
+- **React Hook Form**: Form validation library
+- **Zod**: TypeScript-first schema validation
 
-## Learn More
+## Future Enhancements
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Add backend API integration
+- Implement real-time updates with WebSockets
+- Add analytics for poll creators
+- Support for more poll types (multiple choice, ranked choice, etc.)
+- Social sharing features
