@@ -1,72 +1,127 @@
-# TruePoll - Next.js Polling Application
+# TruePoll - Modern Polling Application
 
-TruePoll is a modern web application built with Next.js that allows users to create, share, and vote on polls. This project uses the App Router, TypeScript, Tailwind CSS, and Shadcn UI components.
+A modern polling application built with Next.js 15, Supabase, and Shadcn UI components.
 
 ## Features
 
-- **User Authentication**: Register, login, and manage user accounts
-- **Poll Creation**: Create custom polls with multiple options
-- **Poll Voting**: Vote on polls and see real-time results
-- **Poll Browsing**: Browse and search through available polls
+- 🔐 User authentication with Supabase
+- 📊 Create and manage polls
+- 🗳️ Vote on polls (one vote per user per poll)
+- 📱 Responsive design with modern UI
+- 🔒 Row Level Security (RLS) for data protection
+- ⚡ Real-time updates
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 with App Router
+- **UI Components**: Shadcn UI with Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **TypeScript**: Full type safety
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- Supabase account
+- Git
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd truepoll
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+4. Set up Supabase Database:
+	- Go to your Supabase project dashboard
+	- Navigate to the SQL Editor
+	- Run the SQL commands from `database-schema.sql`
+
+5. Run the development server:
+```bash
+npm run dev
+```
+
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Database Schema
+
+The application uses three main tables:
+
+- **polls**: Stores poll information
+- **poll_options**: Stores poll options
+- **votes**: Stores user votes
+
+All tables have Row Level Security (RLS) enabled for data protection.
 
 ## Project Structure
 
 ```
-├── app/                      # Next.js App Router
-│   ├── auth/                 # Authentication pages
-│   │   ├── login/            # Login page
-│   │   └── register/         # Registration page
-│   ├── polls/                # Poll-related pages
-│   │   ├── [id]/             # Individual poll view
-│   │   └── create/           # Poll creation page
-│   ├── globals.css           # Global styles
-│   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Home page
-├── components/               # React components
-│   ├── layout/               # Layout components
-│   │   ├── MainLayout.tsx    # Main layout wrapper
-│   │   └── Navigation.tsx    # Navigation bar
-│   ├── polls/                # Poll-related components
-│   │   └── PollCard.tsx      # Poll card component
-│   ├── shared/               # Shared components
-│   │   └── EmptyState.tsx    # Empty state component
-│   └── ui/                   # Shadcn UI components
-├── contexts/                 # React contexts
-│   └── AuthContext.tsx       # Authentication context
-├── lib/                      # Utility functions
-│   └── utils.ts              # Helper utilities
-└── public/                   # Static assets
+truepoll/
+├── app/
+│   ├── auth/                # Authentication pages
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── logout/
+│   │   │   └── page.tsx
+│   │   └── register/
+│   │       └── page.tsx
+│   ├── polls/               # Poll management
+│   │   ├── page.tsx
+│   │   └── create/
+│   │       └── page.tsx
+│   ├── layout.tsx           # Root layout
+│   └── globals.css          # Global styles
+├── components/
+│   ├── layout/              # Main layout and navigation
+│   ├── polls/               # Poll-related components
+│   ├── shared/              # Shared components
+│   └── ui/                  # Shadcn UI components
+├── contexts/
+│   └── AuthContext.tsx      # Auth context provider
+├── lib/
+│   ├── supabase-server.ts   # Supabase server client
+│   ├── supabase.ts          # Supabase client
+│   ├── utils.ts             # Utility functions
+│   └── actions/             # Poll and vote actions
+├── middleware.ts            # Auth middleware
+├── types/
+│   └── supabase.ts          # TypeScript definitions
+├── public/                  # Static assets
+├── database-schema.sql      # Database schema
+├── database-schema-fixed.sql # Fixed database schema
+└── database-voting-policies-fix.sql # Voting policies fix
 ```
 
-## Getting Started
+## Authentication Flow
 
-First, run the development server:
+1. Users register/login through the auth pages
+2. Middleware protects routes and redirects unauthenticated users
+3. AuthContext provides user state throughout the app
+4. RLS policies ensure users can only access appropriate data
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Contributing
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## Technologies Used
+## License
 
-- **Next.js**: React framework for server-side rendering and static site generation
-- **TypeScript**: Typed JavaScript for better developer experience
-- **Tailwind CSS**: Utility-first CSS framework
-- **Shadcn UI**: Reusable UI components built with Radix UI and Tailwind CSS
-- **React Hook Form**: Form validation library
-- **Zod**: TypeScript-first schema validation
-
-## Future Enhancements
-
-- Add backend API integration
-- Implement real-time updates with WebSockets
-- Add analytics for poll creators
-- Support for more poll types (multiple choice, ranked choice, etc.)
-- Social sharing features
+This project is licensed under the MIT License.
