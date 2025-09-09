@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -23,7 +25,15 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register, isLoading: authLoading, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push('/polls');
+    }
+  }, [user, authLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,14 +48,29 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     
-    // This would be replaced with actual registration logic
-    console.log('Register values:', values);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsLoading(false);
-    router.push('/auth/login');
+    try {
+      await register(values.name, values.email, values.password);
+      toast.success('Registration successful! Please check your email for verification.');
+      
+      // Redirect to login page after successful registration
+      router.push('/auth/login');
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast.error(error.message || 'Failed to register. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Don't render the form if user is already logged in
+  if (user && !authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <div className="text-center">
+          <p>Already logged in. Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -69,7 +94,7 @@ export default function RegisterPage() {
                     <FormControl>
                       <Input 
                         placeholder="John Doe" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -87,7 +112,7 @@ export default function RegisterPage() {
                       <Input 
                         placeholder="email@example.com" 
                         type="email" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -105,7 +130,7 @@ export default function RegisterPage() {
                       <Input 
                         placeholder="********" 
                         type="password" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -123,7 +148,7 @@ export default function RegisterPage() {
                       <Input 
                         placeholder="********" 
                         type="password" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -131,8 +156,8 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating account...' : 'Register'}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? 'Creating account...' : 'Register'}
               </Button>
             </form>
           </Form>

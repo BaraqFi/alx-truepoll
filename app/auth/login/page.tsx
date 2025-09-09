@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -18,7 +20,15 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, isLoading: authLoading, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push('/polls');
+    }
+  }, [user, authLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -31,14 +41,29 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     
-    // This would be replaced with actual authentication logic
-    console.log('Login values:', values);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsLoading(false);
-    router.push('/polls');
+    try {
+      await login(values.email, values.password);
+      toast.success('Logged in successfully');
+      
+      // The AuthContext will update the user state
+      // The useEffect above will handle the redirect
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Failed to login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Don't render the form if user is already logged in
+  if (user && !authLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <div className="text-center">
+          <p>Already logged in. Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -63,7 +88,7 @@ export default function LoginPage() {
                       <Input 
                         placeholder="email@example.com" 
                         type="email" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -81,7 +106,7 @@ export default function LoginPage() {
                       <Input 
                         placeholder="********" 
                         type="password" 
-                        disabled={isLoading} 
+                        disabled={isLoading || authLoading} 
                         {...field} 
                       />
                     </FormControl>
@@ -89,8 +114,8 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Login'}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
           </Form>
