@@ -166,24 +166,15 @@ export async function canUserVote(pollId: string, userId: string) {
   try {
     const supabase = await createServerActionClient();
     
-    // Check if poll exists and is active
+    // Check if poll exists
     const { data: poll, error: pollError } = await supabase
       .from('polls')
-      .select('is_active, expires_at, is_multiple_choice')
+      .select('is_multiple_choice')
       .eq('id', pollId)
       .single();
 
     if (pollError) {
       throw new Error('Poll not found');
-    }
-
-    if (!poll.is_active) {
-      return { success: true, canVote: false, reason: 'Poll is not active' };
-    }
-
-    // Check if poll has expired
-    if (poll.expires_at && new Date(poll.expires_at) <= new Date()) {
-      return { success: true, canVote: false, reason: 'Poll has expired' };
     }
 
     // For single choice polls, check if user has already voted
