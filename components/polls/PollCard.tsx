@@ -3,27 +3,27 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Calendar, BarChart3 } from "lucide-react";
 
-interface PollOption {
+type PollOption = {
   id: string;
   text: string;
   position: number;
-}
+};
 
-interface PollCardProps {
+type Poll = {
   id: string;
   title: string;
-  description?: string | null;
+  description: string | null;
   created_at: string;
+  is_multiple_choice: boolean;
   poll_options: PollOption[];
+};
+
+interface PollCardProps {
+  poll: Poll;
 }
 
-export default function PollCard({ 
-  id, 
-  title, 
-  description, 
-  created_at,
-  poll_options 
-}: PollCardProps) {
+export default function PollCard({ poll }: PollCardProps) {
+  const { id, title, description, created_at, poll_options } = poll;
   // Format the date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

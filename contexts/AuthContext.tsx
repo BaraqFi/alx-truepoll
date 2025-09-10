@@ -1,13 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-// Use the Supabase User type directly to ensure compatibility
-type User = SupabaseUser | null;
-
-type AuthContextType = {
+// Type declarations
+export type User = SupabaseUser | null;
+export type AuthContextType = {
   user: User;
   session: Session | null;
   login: (email: string, password: string) => Promise<void>;
@@ -29,12 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setIsLoading(true);
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
         if (error) {
           console.error('Error getting session:', error);
           return;
         }
-        
         if (currentSession) {
           setSession(currentSession);
           setUser(currentSession.user);
@@ -45,14 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-
     initializeAuth();
-
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log('Auth state changed:', event, !!currentSession);
-        
         if (currentSession) {
           setSession(currentSession);
           setUser(currentSession.user);
@@ -63,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     );
-
+    
     // Cleanup subscription
     return () => {
       subscription.unsubscribe();
@@ -77,11 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
       });
-      
       if (error) throw error;
-      
-      // Session and user will be updated by the onAuthStateChange listener
-      // But we can also set them immediately for better UX
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
@@ -106,17 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         },
       });
-      
       if (error) throw error;
-      
-      // For immediate feedback, set the user if available
       if (data.user && data.session) {
         setSession(data.session);
         setUser(data.user);
       }
-      
       // Note: Supabase may require email verification depending on your settings
-      // The user won't be fully authenticated until they verify their email
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -130,10 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
-      // Clear local state immediately
       setSession(null);
       setUser(null);
+      setTimeout(() => {
+        toast.success('Logged out successfully');
+      }, 500);
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;

@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -25,49 +25,45 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading: authLoading, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user && !authLoading) {
-      router.push('/polls');
-    }
-  }, [user, authLoading, router]);
-
+  const { register, isLoading, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
+  useEffect(() => {
+    if (user && !isLoading) {
+      router.push('/polls');
+    }
+  }, [user, isLoading, router]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
       await register(values.name, values.email, values.password);
-      toast.success('Registration successful! Please check your email for verification.');
-      
-      // Redirect to login page after successful registration
+      toast.success("Registration successful! Please check your email for verification.");
       router.push('/auth/login');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'Failed to register. Please try again.');
+    } catch (error) {
+      const err = error as any;
+      toast.error(err.message || "Failed to register. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
-  // Don't render the form if user is already logged in
-  if (user && !authLoading) {
+  if (user && !isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
         <div className="text-center">
-          <p>Already logged in. Redirecting...</p>
+          <p>Already registered and logged in. Redirecting...</p>
         </div>
       </div>
     );
@@ -77,9 +73,9 @@ export default function RegisterPage() {
     <div className="flex justify-center items-center min-h-[80vh]">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Register</CardTitle>
           <CardDescription className="text-center">
-            Enter your information to create an account
+            Create an account to start polling
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,11 +88,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="John Doe" 
-                        disabled={isLoading || authLoading} 
-                        {...field} 
-                      />
+                      <Input placeholder="Your name" disabled={isSubmitting} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -109,12 +101,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="email@example.com" 
-                        type="email" 
-                        disabled={isLoading || authLoading} 
-                        {...field} 
-                      />
+                      <Input placeholder="email@example.com" type="email" disabled={isSubmitting} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,12 +114,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="********" 
-                        type="password" 
-                        disabled={isLoading || authLoading} 
-                        {...field} 
-                      />
+                      <Input placeholder="********" type="password" disabled={isSubmitting} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -145,19 +127,14 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="********" 
-                        type="password" 
-                        disabled={isLoading || authLoading} 
-                        {...field} 
-                      />
+                      <Input placeholder="********" type="password" disabled={isSubmitting} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
-                {isLoading || authLoading ? 'Creating account...' : 'Register'}
+              <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+                {isSubmitting || isLoading ? "Creating account..." : "Register"}
               </Button>
             </form>
           </Form>

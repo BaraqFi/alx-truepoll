@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createServerActionClient } from '@/lib/supabase-server';
 
 type PollOption = {
   text: string;
@@ -20,6 +20,15 @@ type CreatePollData = {
 
 export async function createPoll(data: CreatePollData, userId: string) {
   try {
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to create a poll');
+    }
+    
     // Insert the poll
     const { data: pollData, error: pollError } = await supabase
       .from('polls')
@@ -45,7 +54,7 @@ export async function createPoll(data: CreatePollData, userId: string) {
     // Insert the poll options
     const pollOptions = data.options.map((option, index) => ({
       poll_id: pollData.id,
-      text: option.text,
+      text: option.text.trim(),
       position: option.position || index,
     }));
 
@@ -71,17 +80,41 @@ export async function createPoll(data: CreatePollData, userId: string) {
 
 export async function getUserPolls(userId: string) {
   try {
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to view your polls');
+    }
+    
     const { data, error } = await supabase
       .from('polls')
-      .select('*, poll_options(*)')
+      .select(`
+        id,
+        title,
+        description,
+        created_at,
+        expires_at,
+        is_multiple_choice,
+        is_public,
+        total_votes,
+        poll_options (
+          id,
+          text,
+          position
+        )
+      `)
       .eq('created_by', userId)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch polls: ${error.message}`);
     }
 
-    return { success: true, polls: data };
+    return { success: true, polls: data || [] };
   } catch (error: any) {
     console.error('Error fetching polls:', error);
     return { success: false, error: error.message };
@@ -90,25 +123,91 @@ export async function getUserPolls(userId: string) {
 
 export async function getPublicPolls() {
   try {
+    const supabase = await createServerActionClient();
+    
     const { data, error } = await supabase
       .from('polls')
-      .select('*, poll_options(*)')
+      .select(`
+        id,
+        title,
+        description,
+        created_at,
+        expires_at,
+        is_multiple_choice,
+        is_public,
+        total_votes,
+        poll_options (
+          id,
+          text,
+          position
+        )
+      `)
       .eq('is_public', true)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to fetch public polls: ${error.message}`);
     }
 
-    return { success: true, polls: data };
+    return { success: true, polls: data || [] };
   } catch (error: any) {
     console.error('Error fetching public polls:', error);
     return { success: false, error: error.message };
   }
 }
 
+export async function getPollById(pollId: string) {
+  try {
+    const supabase = await createServerActionClient();
+    
+    const { data, error } = await supabase
+      .from('polls')
+      .select(`
+        id,
+        title,
+        description,
+        created_at,
+        expires_at,
+        is_multiple_choice,
+        is_public,
+        total_votes,
+        created_by,
+        poll_options (
+          id,
+          text,
+          position
+        )
+      `)
+      .eq('id', pollId)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Poll not found');
+      }
+      throw new Error(`Failed to fetch poll: ${error.message}`);
+    }
+
+    return { success: true, poll: data };
+  } catch (error: any) {
+    console.error('Error fetching poll:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createDemoPolls(userId: string) {
   try {
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to create demo polls');
+    }
+    
     const demoPolls = [
       {
         title: 'Favorite Programming Language?',
@@ -195,31 +294,46 @@ export async function createDemoPolls(userId: string) {
   }
 }
 
-export async function getPollById(pollId: string) {
+export async function deletePoll(pollId: string, userId: string) {
   try {
-    const { data, error } = await supabase
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to delete polls');
+    }
+    
+    // First check if the user owns this poll
+    const { data: poll, error: pollError } = await supabase
       .from('polls')
-      .select(`
-        id,
-        title,
-        description,
-        created_at,
-        expires_at,
-        is_multiple_choice,
-        is_public,
-        created_by,
-        poll_options (id, text, position)
-      `)
+      .select('created_by')
       .eq('id', pollId)
       .single();
 
-    if (error) {
-      throw new Error(`Failed to fetch poll: ${error.message}`);
+    if (pollError) {
+      throw new Error('Poll not found');
     }
 
-    return { success: true, poll: data };
+    if (poll.created_by !== userId) {
+      throw new Error('You can only delete your own polls');
+    }
+
+    // Delete the poll (cascade will handle options and votes)
+    const { error: deleteError } = await supabase
+      .from('polls')
+      .delete()
+      .eq('id', pollId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete poll: ${deleteError.message}`);
+    }
+
+    revalidatePath('/polls');
+    return { success: true };
   } catch (error: any) {
-    console.error('Error fetching poll:', error);
+    console.error('Error deleting poll:', error);
     return { success: false, error: error.message };
   }
 }

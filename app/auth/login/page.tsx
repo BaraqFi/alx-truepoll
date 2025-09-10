@@ -1,69 +1,58 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { useState, useEffect, Suspense } from "react";
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
 });
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const { login, isLoading: authLoading, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user && !authLoading) {
-      router.push('/polls');
-    }
-  }, [user, authLoading, router]);
-
+  const searchParams = useSearchParams();
+  const { login, isLoading, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
+  const redirectTo = searchParams.get('redirect') || '/polls';
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      router.push(redirectTo);
+    }
+  }, [user, isLoading, router, redirectTo]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
       await login(values.email, values.password);
-      toast.success('Logged in successfully');
-      
-      // The AuthContext will update the user state
-      // The useEffect above will handle the redirect
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.message || 'Failed to login. Please try again.');
+      toast.success("Logged in successfully");
+      router.push(redirectTo);
+    } catch (error) {
+      const err = error as any;
+      toast.error(err.message || "Failed to login. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  }
-
-  // Don't render the form if user is already logged in
-  if (user && !authLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <div className="text-center">
-          <p>Already logged in. Redirecting...</p>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -88,7 +77,7 @@ export default function LoginPage() {
                       <Input 
                         placeholder="email@example.com" 
                         type="email" 
-                        disabled={isLoading || authLoading} 
+                        disabled={isSubmitting || isLoading}
                         {...field} 
                       />
                     </FormControl>
@@ -106,7 +95,7 @@ export default function LoginPage() {
                       <Input 
                         placeholder="********" 
                         type="password" 
-                        disabled={isLoading || authLoading} 
+                        disabled={isSubmitting || isLoading}
                         {...field} 
                       />
                     </FormControl>
@@ -114,8 +103,8 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
-                {isLoading || authLoading ? 'Logging in...' : 'Login'}
+              <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+                {isSubmitting || isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </Form>
@@ -130,5 +119,19 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
