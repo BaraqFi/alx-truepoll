@@ -1,32 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createServerActionClient } from '@/lib/supabase-server';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Log cookies
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options });
-          },
-        },
-      }
+    const authCookies = cookieStore.getAll().filter(cookie => 
+      cookie.name.includes('supabase') || cookie.name.includes('auth')
     );
+    console.log('API Route - Auth cookies:', authCookies.map(c => ({ name: c.name, hasValue: !!c.value })));
+
+    const supabase = await createServerActionClient();
 
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError || !user) {
+    console.log('API Route - User check:', { user: !!user, error: authError });
+    
+    if (authError) {
+      console.error('Authentication error:', authError);
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+    }
+    
+    if (!user) {
+      console.log('No user found in session');
       return NextResponse.json({ error: 'You must be logged in to create a poll' }, { status: 401 });
     }
 

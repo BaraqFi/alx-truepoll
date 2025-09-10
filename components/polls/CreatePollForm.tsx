@@ -65,6 +65,7 @@ export function CreatePollForm() {
       return;
     }
 
+    console.log('Form submission - User:', user.id, 'Email:', user.email);
     setIsSubmitting(true);
     
     try {
