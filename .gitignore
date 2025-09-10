@@ -42,6 +42,12 @@ next-env.d.ts
 
 # project documentation and database files
 *.sql
-*.txt
 SETUP.md
 PROJECT_BACKUP.md
+
+# Avoid blanket .txt ignores; scope to specific files
+error.txt
+details.txt
+# Keep important .txt files like robots.txt, sitemap.txt
+!public/robots.txt
+!public/sitemap*.txt

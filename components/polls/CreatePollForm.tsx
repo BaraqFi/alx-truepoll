@@ -65,7 +65,9 @@ export function CreatePollForm() {
       return;
     }
 
-    console.log('Form submission - User:', user.id, 'Email:', user.email);
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[CreatePollForm] submit', { userId: user.id });
+    }
     setIsSubmitting(true);
     
     try {
