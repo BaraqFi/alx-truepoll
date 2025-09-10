@@ -38,7 +38,6 @@ export async function createPoll(data: CreatePollData, userId: string) {
         created_by: userId,
         is_multiple_choice: data.isMultipleChoice,
         is_public: data.isPublic,
-        expires_at: data.expiresAt ? data.expiresAt.toISOString() : null,
       })
       .select('id')
       .single();
@@ -96,10 +95,8 @@ export async function getUserPolls(userId: string) {
         title,
         description,
         created_at,
-        expires_at,
         is_multiple_choice,
         is_public,
-        total_votes,
         poll_options (
           id,
           text,
@@ -107,7 +104,6 @@ export async function getUserPolls(userId: string) {
         )
       `)
       .eq('created_by', userId)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -132,10 +128,8 @@ export async function getPublicPolls() {
         title,
         description,
         created_at,
-        expires_at,
         is_multiple_choice,
         is_public,
-        total_votes,
         poll_options (
           id,
           text,
@@ -143,7 +137,6 @@ export async function getPublicPolls() {
         )
       `)
       .eq('is_public', true)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -168,10 +161,8 @@ export async function getPollById(pollId: string) {
         title,
         description,
         created_at,
-        expires_at,
         is_multiple_choice,
         is_public,
-        total_votes,
         created_by,
         poll_options (
           id,
@@ -180,7 +171,6 @@ export async function getPollById(pollId: string) {
         )
       `)
       .eq('id', pollId)
-      .eq('is_active', true)
       .single();
 
     if (error) {
