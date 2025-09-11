@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Loader2 } from 'lucide-react';
 import { getPollResults } from '@/lib/actions/votes';
+import { supabase } from '@/lib/supabase';
 
 type PollOption = {
   id: string;
@@ -15,10 +16,9 @@ type PollOption = {
 interface PollResultsProps {
   pollId: string;
   options: PollOption[];
-  refreshTrigger?: number;
 }
 
-export default function PollResults({ pollId, options, refreshTrigger }: PollResultsProps) {
+export default function PollResults({ pollId, options }: PollResultsProps) {
   const [results, setResults] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +38,22 @@ export default function PollResults({ pollId, options, refreshTrigger }: PollRes
     };
 
     fetchResults();
-  }, [pollId, refreshTrigger]);
+
+    const channel = supabase
+      .channel(`poll_${pollId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'votes', filter: `poll_id=eq.${pollId}` },
+        (payload) => {
+          fetchResults();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [pollId]);
 
   const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
 
