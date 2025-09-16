@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import MainLayout from '@/components/layout/MainLayout';
 import VotingForm from '@/components/polls/VotingForm';
 import QRCodeDisplay from '@/components/polls/QRCodeDisplay';
@@ -35,7 +36,12 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
 
         <Card>
           <CardHeader>
-            <CardTitle>{poll.title}</CardTitle>
+            <div className="flex items-start justify-between">
+              <CardTitle>{poll.title}</CardTitle>
+              <Badge variant={poll.is_active ? "default" : "secondary"}>
+                {poll.is_active ? "Active" : "Closed"}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">{poll.description}</p>
@@ -52,6 +58,7 @@ export default async function PollDetailPage({ params }: { params: Promise<{ id:
               pollId={poll.id}
               options={poll.poll_options}
               isMultipleChoice={poll.is_multiple_choice}
+              isActive={poll.is_active}
             />
             
             {/* Poll Results Component */}

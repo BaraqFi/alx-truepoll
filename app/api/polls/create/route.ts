@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
         created_by: user.id,
         is_multiple_choice: Boolean(isMultipleChoice),
         is_public: Boolean(isPublic),
+        is_active: true,
       })
       .select('id')
       .single();

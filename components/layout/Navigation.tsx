@@ -52,12 +52,20 @@ export default function Navigation() {
               Browse Polls
             </Link>
             {isLoggedIn && (
-              <Link 
-                href="/polls/create" 
-                className={`text-sm ${pathname === '/polls/create' ? 'font-medium' : 'text-muted-foreground'}`}
-              >
-                Create Poll
-              </Link>
+              <>
+                <Link 
+                  href="/polls/my-polls" 
+                  className={`text-sm ${pathname === '/polls/my-polls' ? 'font-medium' : 'text-muted-foreground'}`}
+                >
+                  My Polls
+                </Link>
+                <Link 
+                  href="/polls/create" 
+                  className={`text-sm ${pathname === '/polls/create' ? 'font-medium' : 'text-muted-foreground'}`}
+                >
+                  Create Poll
+                </Link>
+              </>
             )}
           </nav>
         </div>

@@ -38,6 +38,7 @@ export async function createPoll(data: CreatePollData, userId: string) {
         created_by: userId,
         is_multiple_choice: data.isMultipleChoice,
         is_public: data.isPublic,
+        is_active: true,
       })
       .select('id')
       .single();
@@ -97,6 +98,7 @@ export async function getUserPolls(userId: string) {
         created_at,
         is_multiple_choice,
         is_public,
+        is_active,
         poll_options (
           id,
           text,
@@ -130,6 +132,7 @@ export async function getPublicPolls() {
         created_at,
         is_multiple_choice,
         is_public,
+        is_active,
         poll_options (
           id,
           text,
@@ -137,6 +140,7 @@ export async function getPublicPolls() {
         )
       `)
       .eq('is_public', true)
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -163,6 +167,7 @@ export async function getPollById(pollId: string) {
         created_at,
         is_multiple_choice,
         is_public,
+        is_active,
         created_by,
         poll_options (
           id,
@@ -249,6 +254,7 @@ export async function createDemoPolls(userId: string) {
           created_by: userId,
           is_multiple_choice: pollData.isMultipleChoice,
           is_public: pollData.isPublic,
+          is_active: true,
         })
         .select('id')
         .single();
@@ -280,6 +286,120 @@ export async function createDemoPolls(userId: string) {
     return { success: true };
   } catch (error: any) {
     console.error('Error creating demo polls:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function closePoll(pollId: string, userId: string) {
+  try {
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to close polls');
+    }
+    
+    // Verify poll ownership and current status
+    const { data: poll, error: pollError } = await supabase
+      .from('polls')
+      .select('id, created_by, is_active, title')
+      .eq('id', pollId)
+      .single();
+      
+    if (pollError) {
+      if (pollError.code === 'PGRST116') {
+        throw new Error('Poll not found');
+      }
+      throw new Error(`Failed to fetch poll: ${pollError.message}`);
+    }
+    
+    if (poll.created_by !== userId) {
+      throw new Error('You can only close your own polls');
+    }
+    
+    if (!poll.is_active) {
+      throw new Error('This poll is already closed');
+    }
+    
+    // Close the poll
+    const { error: updateError } = await supabase
+      .from('polls')
+      .update({ 
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', pollId);
+      
+    if (updateError) {
+      throw new Error(`Failed to close poll: ${updateError.message}`);
+    }
+    
+    // Revalidate relevant paths
+    revalidatePath('/polls');
+    revalidatePath(`/polls/${pollId}`);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error closing poll:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function reopenPoll(pollId: string, userId: string) {
+  try {
+    const supabase = await createServerActionClient();
+    
+    // Verify the user exists and is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user || user.id !== userId) {
+      throw new Error('You must be logged in to reopen polls');
+    }
+    
+    // Verify poll ownership and current status
+    const { data: poll, error: pollError } = await supabase
+      .from('polls')
+      .select('id, created_by, is_active, title')
+      .eq('id', pollId)
+      .single();
+      
+    if (pollError) {
+      if (pollError.code === 'PGRST116') {
+        throw new Error('Poll not found');
+      }
+      throw new Error(`Failed to fetch poll: ${pollError.message}`);
+    }
+    
+    if (poll.created_by !== userId) {
+      throw new Error('You can only reopen your own polls');
+    }
+    
+    if (poll.is_active) {
+      throw new Error('This poll is already open');
+    }
+    
+    // Reopen the poll
+    const { error: updateError } = await supabase
+      .from('polls')
+      .update({ 
+        is_active: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', pollId);
+      
+    if (updateError) {
+      throw new Error(`Failed to reopen poll: ${updateError.message}`);
+    }
+    
+    // Revalidate relevant paths
+    revalidatePath('/polls');
+    revalidatePath(`/polls/${pollId}`);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error reopening poll:', error);
     return { success: false, error: error.message };
   }
 }

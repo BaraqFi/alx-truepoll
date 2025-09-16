@@ -22,6 +22,7 @@ interface VotingFormProps {
   pollId: string;
   options: PollOption[];
   isMultipleChoice: boolean;
+  isActive?: boolean;
   onVoteComplete?: () => void;
 }
 
@@ -29,6 +30,7 @@ export default function VotingForm({
   pollId,
   options,
   isMultipleChoice,
+  isActive = true,
   onVoteComplete
 }: VotingFormProps) {
   const { user } = useAuth();
@@ -162,6 +164,21 @@ export default function VotingForm({
         <CardContent className="space-y-4">
           <p className="text-center text-muted-foreground py-8">
             You need to be logged in to vote on this poll.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isActive) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Poll Closed</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-center text-muted-foreground py-8">
+            This poll has been closed by its creator. Voting is no longer available.
           </p>
         </CardContent>
       </Card>
