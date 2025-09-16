@@ -43,6 +43,27 @@ export default function PollActions({ poll, onPollUpdated }: PollActionsProps) {
         body: JSON.stringify({ action: 'close' })
       });
       
+      if (!response.ok) {
+        // Try to parse error response as JSON, fallback to text
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorResult = await response.json();
+            errorMessage = errorResult.error || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (parseError) {
+          // Use the default error message if parsing fails
+        }
+        toast.error(errorMessage);
+        return;
+      }
+      
       const result = await response.json();
       
       if (result.success) {
@@ -68,6 +89,27 @@ export default function PollActions({ poll, onPollUpdated }: PollActionsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reopen' })
       });
+      
+      if (!response.ok) {
+        // Try to parse error response as JSON, fallback to text
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorResult = await response.json();
+            errorMessage = errorResult.error || errorMessage;
+          } else {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch (parseError) {
+          // Use the default error message if parsing fails
+        }
+        toast.error(errorMessage);
+        return;
+      }
       
       const result = await response.json();
       

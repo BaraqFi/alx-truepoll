@@ -12,9 +12,9 @@ interface Poll {
   title: string;
   description: string | null;
   created_at: string;
-  expires_at: string | null;
   is_multiple_choice: boolean;
   is_public: boolean;
+  is_active: boolean;
   total_votes: number;
   poll_options: Array<{
     id: string;

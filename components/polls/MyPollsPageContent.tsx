@@ -149,14 +149,8 @@ export default function MyPollsPageContent() {
         <EmptyState
           title="No polls created yet"
           description="You haven't created any polls yet. Create your first poll to get started!"
-          action={
-            <Button asChild>
-              <Link href="/polls/create">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Your First Poll
-              </Link>
-            </Button>
-          }
+          actionLabel="Create Your First Poll"
+          actionHref="/polls/create"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

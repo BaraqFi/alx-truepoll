@@ -133,6 +133,7 @@ export async function getPublicPolls() {
         is_multiple_choice,
         is_public,
         is_active,
+        total_votes,
         poll_options (
           id,
           text,
